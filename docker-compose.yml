@@ -1,0 +1,70 @@
+version: '2.0'
+
+services:
+
+    #Redis Service
+    redis:
+        image: redis:latest
+        ports:
+            - 6379:6379
+        networks:
+            - app-network
+
+
+    #PHP Service
+    php:
+        build:
+            context: .
+            dockerfile: ./dockerfiles/php/Dockerfile
+        volumes:
+            - ./:/var/www
+            - ./dockerfiles/php/supervisor.conf:/etc/supervisord.conf
+#            - ./dockerfiles/php/cacert.pem:/usr/local/etc/php/conf.d/cacert.pem
+#            - ./dockerfiles/php/php.ini:/usr/local/etc/php/conf.d/php.ini
+        working_dir: /var/www
+        networks:
+            - app-network
+
+
+    #Nginx Service
+    webserver:
+        image: nginx
+        container_name: webserver_laravel_redis
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - ./:/var/www
+            - ./nginx/conf.d/:/etc/nginx/conf.d
+            - ./ssl_certs_new/server-pay.mtm.tj.crt:/etc/nginx/ssl_certs/pay.mtm.tj.crt:ro
+            - ./ssl_certs_new/server-pay.mtm.tj.key:/etc/nginx/ssl_certs/pay.mtm.tj.key:ro
+        networks:
+            - app-network
+
+    #PostgresDb Service
+    db:
+        image: postgres:latest
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: 123456
+        ports:
+            - 5432:5432
+        volumes:
+            - ./var/lib/postgres/data:/var/lib/postgres/data
+            - ./var/lib/postgres/table_spaces/im_imcon_tbs:/var/lib/postgres/table_spaces/im_imcon_tbs
+            - ./var/lib/postgres/table_spaces/im_histories_tbs:/var/lib/postgres/table_spaces/im_histories_tbs
+        networks:
+            - app-network
+
+#Docker Networks
+networks:
+    app-network:
+        driver: bridge
+
+
+
+
+
+
+
+
